@@ -574,7 +574,17 @@ public class QQService {
             }
         }else if (StringUtils.containsIgnoreCase(content,"机器人")) {
              ret = "我只是个机器人呀！";
-        }else {
+        }else if (StringUtils.containsIgnoreCase(content, "绕口令")) {
+          ret = turingQueryService.chat(userName, "说个绕口令");
+          ret = StringUtils.replace(ret, "<br>", "\n");
+        }else if (StringUtils.containsIgnoreCase(content, "脑筋急转弯")) {
+          ret = turingQueryService.chat(userName, "说个脑筋急转弯");
+          ret = StringUtils.replace(ret, "<br>", "\n");
+        }else if (StringUtils.containsIgnoreCase(content, "图片")) {
+          ret = turingQueryService.chat(userName, content);
+          ret = StringUtils.replace(ret, "<br>", "\n");
+        }
+        else {
             LOGGER.info("do nothing ...");
         }
 
