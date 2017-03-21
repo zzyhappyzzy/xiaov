@@ -60,6 +60,36 @@ public class TuringQueryService {
      */
     private static final URLFetchService URL_FETCH_SVC = URLFetchServiceFactory.getURLFetchService();
 
+    public String removeRobotName(String msg) {
+      String result = msg;
+      if (msg.startsWith("@")) {
+         result = StringUtils.substringAfter(msg, "@");
+      }
+      result = checkRobotName(result, XiaoVs.QQ_BOT_NAME);
+      result = checkRobotName(result, XiaoVs.QQ_BOT_NICK_NAME);
+      return result;
+    }
+
+    public String checkRobotName(String msg, final String robotName) {
+        if (StringUtils.isBlank(msg)) {
+            return null;
+        }
+        if (msg.startsWith(robotName + " ")) {
+            msg = msg.replace(robotName + " ", "");
+        }
+        if (msg.startsWith(robotName + "，")) {
+            msg = msg.replace(robotName + "，", "");
+        }
+        if (msg.startsWith(robotName + ",")) {
+            msg = msg.replace(robotName + ",", "");
+        }
+        if (msg.startsWith(robotName)) {
+            msg = msg.replace(robotName, "");
+        }
+
+        return msg;
+    }
+
     /**
      * Chat with Turing Robot.
      *
@@ -68,26 +98,13 @@ public class TuringQueryService {
      * @return robot returned message, return {@code null} if not found
      */
     public String chat(final String userName, String msg) {
-        if (StringUtils.isBlank(msg)) {
+        String queryMsg = removeRobotName(msg);
+
+        if (StringUtils.isBlank(userName) || StringUtils.isBlank(queryMsg)) {
             return null;
         }
 
-        if (msg.startsWith(XiaoVs.QQ_BOT_NAME + " ")) {
-            msg = msg.replace(XiaoVs.QQ_BOT_NAME + " ", "");
-        }
-        if (msg.startsWith(XiaoVs.QQ_BOT_NAME + "，")) {
-            msg = msg.replace(XiaoVs.QQ_BOT_NAME + "，", "");
-        }
-        if (msg.startsWith(XiaoVs.QQ_BOT_NAME + ",")) {
-            msg = msg.replace(XiaoVs.QQ_BOT_NAME + ",", "");
-        }
-        if (msg.startsWith(XiaoVs.QQ_BOT_NAME)) {
-            msg = msg.replace(XiaoVs.QQ_BOT_NAME, "");
-        }
-
-        if (StringUtils.isBlank(userName) || StringUtils.isBlank(msg)) {
-            return null;
-        }
+        LOGGER.info("query msg is "+queryMsg);
 
         final HTTPRequest request = new HTTPRequest();
         request.setRequestMethod(HTTPRequestMethod.POST);
@@ -96,7 +113,7 @@ public class TuringQueryService {
             request.setURL(new URL(TURING_API));
 
             final String body = "key=" + URLEncoder.encode(TURING_KEY, "UTF-8")
-                    + "&info=" + URLEncoder.encode(msg, "UTF-8")
+                    + "&info=" + URLEncoder.encode(queryMsg, "UTF-8")
                     + "&userid=" + URLEncoder.encode(userName, "UTF-8");
             request.setPayload(body.getBytes("UTF-8"));
 

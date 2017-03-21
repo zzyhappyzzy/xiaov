@@ -124,18 +124,6 @@ public class QQService {
     private TuringQueryService turingQueryService;
 
     /**
-     * Baidu bot query service.
-     */
-    @Inject
-    private BaiduQueryService baiduQueryService;
-
-    /**
-     * ITPK query service.
-     */
-    @Inject
-    private ItpkQueryService itpkQueryService;
-
-    /**
      * Bot type.
      */
     private static final int QQ_BOT_TYPE = XiaoVs.getInt("qq.bot.type");
@@ -143,7 +131,7 @@ public class QQService {
     /**
      * Advertisements.
      */
-    private static final List<String> ADS = new ArrayList<>();
+    // private static final List<String> ADS = new ArrayList<>();
 
     /**
      * URL fetch service.
@@ -153,17 +141,17 @@ public class QQService {
     /**
      * XiaoV self intro. Built-in advertisement.
      */
-    private static final String XIAO_V_INTRO = "你好，我是小薇~ 关于我的更多资料请看帖 https://hacpai.com/article/1467011936362";
+    private static final String XIAO_V_INTRO = "你好，我是QQRobot";
 
     /**
      * XiaoV listener self intro.
      */
-    private static final String XIAO_V_LISTENER_INTRO = "你好，我是小薇的守护，关于我的更多资料请看帖 https://hacpai.com/article/1467011936362";
+    private static final String XIAO_V_LISTENER_INTRO = "你好，我是QQRobot的守护";
 
     /**
      * No listener message.
      */
-    private static final String NO_LISTENER = "请把我的守护也拉进群，否则会造成大量消息重复（如果已经拉了，那就稍等 10 秒钟，我的守护可能在醒瞌睡 O(∩_∩)O哈哈~）\n\nPS：小薇机器人使用问题请看帖 https://hacpai.com/article/1467011936362";
+    private static final String NO_LISTENER = "请把我的守护也拉进群";
 
     /**
      * 超过 {@value #PUSH_GROUP_USER_COUNT} 个成员的群才推送.
@@ -180,24 +168,11 @@ public class QQService {
      */
     private static final int PUSH_GROUP_COUNT = 5;
 
-    static {
-        String adConf = XiaoVs.getString("ads");
-        if (StringUtils.isNotBlank(adConf)) {
-            final String[] ads = adConf.split("#");
-            ADS.addAll(Arrays.asList(ads));
-        }
-
-        ADS.add(XIAO_V_INTRO);
-        ADS.add(XIAO_V_INTRO);
-        ADS.add(XIAO_V_INTRO);
-    }
-
     /**
      * Initializes QQ client.
      */
     public void initQQClient() {
-        LOGGER.info("开始初始化小薇");
-
+        LOGGER.info("开始初始化QQ机器人...");
         xiaoV = new SmartQQClient(new MessageCallback() {
             @Override
             public void onMessage(final Message message) {
@@ -212,7 +187,6 @@ public class QQService {
                             if (!StringUtils.startsWith(content, key)) { // 不是管理命令，只是普通的私聊
                                 // 让小薇进行自我介绍
                                 xiaoV.sendMessageToFriend(message.getUserId(), XIAO_V_INTRO);
-
                                 return;
                             }
 
@@ -263,10 +237,10 @@ public class QQService {
         reloadGroups();
         reloadDiscusses();
 
-        LOGGER.info("小薇初始化完毕");
+        LOGGER.info("初始化完毕");
 
         if (MSG_ACK_ENABLED) { // 如果启用了消息送达确认
-            LOGGER.info("开始初始化小薇的守护（细节请看：https://github.com/b3log/xiaov/issues/3）");
+            LOGGER.info("开始初始化守护（细节请看：https://github.com/b3log/xiaov/issues/3）");
 
             xiaoVListener = new SmartQQClient(new MessageCallback() {
                 @Override
@@ -309,35 +283,10 @@ public class QQService {
                 }
             });
 
-            LOGGER.info("小薇的守护初始化完毕");
+            LOGGER.info("守护初始化完毕");
         }
 
-        LOGGER.info("小薇 QQ 机器人服务开始工作！");
-    }
-
-    private void sendToForum(final String msg, final String user) {
-        final String forumAPI = XiaoVs.getString("forum.api");
-        final String forumKey = XiaoVs.getString("forum.key");
-
-        final HTTPRequest request = new HTTPRequest();
-        request.setRequestMethod(HTTPRequestMethod.POST);
-
-        try {
-            request.setURL(new URL(forumAPI));
-
-            final String body = "key=" + URLEncoder.encode(forumKey, "UTF-8")
-                    + "&msg=" + URLEncoder.encode(msg, "UTF-8")
-                    + "&user=" + URLEncoder.encode(user, "UTF-8");
-            request.setPayload(body.getBytes("UTF-8"));
-
-            final HTTPResponse response = URL_FETCH_SVC.fetch(request);
-            final int sc = response.getResponseCode();
-            if (HttpServletResponse.SC_OK != sc) {
-                LOGGER.warn("Sends message to Forum status code is [" + sc + "]");
-            }
-        } catch (final Exception e) {
-            LOGGER.log(Level.ERROR, "Sends message to Forum failed: " + e.getMessage());
-        }
+        LOGGER.info("机器人服务开始工作！");
     }
 
     /**
@@ -449,7 +398,6 @@ public class QQService {
         Group group = QQ_GROUPS.get(groupId);
         if (null == group) {
             reloadGroups();
-
             group = QQ_GROUPS.get(groupId);
         }
 
@@ -555,42 +503,14 @@ public class QQService {
 
     public void onQQGroupMessage(final GroupMessage message) {
         final long groupId = message.getGroupId();
-
         final String content = message.getContent();
         final String userName = Long.toHexString(message.getUserId());
-        // Push to forum
-        String qqMsg = content.replaceAll("\\[\"face\",[0-9]+\\]", "");
-        if (StringUtils.isNotBlank(qqMsg)) {
-            qqMsg = "<p>" + qqMsg + "</p>";
-            sendToForum(qqMsg, userName);
-        }
-
-        String msg = "";
-        if (StringUtils.contains(content, XiaoVs.QQ_BOT_NAME)
-                || (StringUtils.length(content) > 6
-                && (StringUtils.contains(content, "?") || StringUtils.contains(content, "？") || StringUtils.contains(content, "问")))) {
-            msg = answer(content, userName);
-        }
-
+        String result = content.replaceAll("\\[\"face\",[0-9]+\\]", "");
+        String msg = answer(result, userName);
+        LOGGER.info("msg is " + msg);
         if (StringUtils.isBlank(msg)) {
             return;
         }
-
-        if (RandomUtils.nextFloat() >= 0.9) {
-            Long latestAdTime = GROUP_AD_TIME.get(groupId);
-            if (null == latestAdTime) {
-                latestAdTime = 0L;
-            }
-
-            final long now = System.currentTimeMillis();
-
-            if (now - latestAdTime > 1000 * 60 * 30) {
-                msg = msg + "\n\n（" + ADS.get(RandomUtils.nextInt(ADS.size())) + "）";
-
-                GROUP_AD_TIME.put(groupId, now);
-            }
-        }
-
         sendMessageToGroup(groupId, msg);
     }
 
@@ -601,10 +521,6 @@ public class QQService {
         final String userName = Long.toHexString(message.getUserId());
         // Push to forum
         String qqMsg = content.replaceAll("\\[\"face\",[0-9]+\\]", "");
-        if (StringUtils.isNotBlank(qqMsg)) {
-            qqMsg = "<p>" + qqMsg + "</p>";
-            sendToForum(qqMsg, userName);
-        }
 
         String msg = "";
         if (StringUtils.contains(content, XiaoVs.QQ_BOT_NAME)
@@ -626,7 +542,7 @@ public class QQService {
             final long now = System.currentTimeMillis();
 
             if (now - latestAdTime > 1000 * 60 * 30) {
-                msg = msg + "\n\n（" + ADS.get(RandomUtils.nextInt(ADS.size())) + "）";
+                // msg = msg + "\n\n（" + ADS.get(RandomUtils.nextInt(ADS.size())) + "）";
 
                 DISCUSS_AD_TIME.put(discussId, now);
             }
@@ -635,43 +551,35 @@ public class QQService {
         sendMessageToDiscuss(discussId, msg);
     }
 
-    private String answer(final String content, final String userName) {
-        String keyword = "";
-        String[] keywords = StringUtils.split(XiaoVs.getString("bot.follow.keywords"), ",");
-        keywords = Strings.trimAll(keywords);
-        for (final String kw : keywords) {
-            if (StringUtils.containsIgnoreCase(content, kw)) {
-                keyword = kw;
-
-                break;
-            }
+    private Boolean matchRobotHandle(final String content) {
+        String result = content;
+        if (StringUtils.startsWith(result,"@")) {
+            result = StringUtils.substringAfter(result,"@");
         }
+        String robot1 = XiaoVs.QQ_BOT_NAME;
+        String robot2 = XiaoVs.QQ_BOT_NICK_NAME;
+        LOGGER.info("chat content is "+result+" robot1 name is "+robot1+" robot2 name is "+robot2);
+        return StringUtils.startsWith(result,robot1) || StringUtils.startsWith(result,robot2);
+    }
 
+    private String answer(final String content, final String userName) {
         String ret = "";
-        if (StringUtils.isNotBlank(keyword)) {
-            try {
-                ret = XiaoVs.getString("bot.follow.keywordAnswer");
-                ret = StringUtils.replace(ret, "{keyword}",
-                        URLEncoder.encode(keyword, "UTF-8"));
-            } catch (final UnsupportedEncodingException e) {
-                LOGGER.log(Level.ERROR, "Search key encoding failed", e);
-            }
-        } else if (StringUtils.contains(content, XiaoVs.QQ_BOT_NAME)) {
+        if (matchRobotHandle(content)) {
+            LOGGER.info("begin handle msg with robot...");
             if (1 == QQ_BOT_TYPE) {
                 ret = turingQueryService.chat(userName, content);
                 ret = StringUtils.replace(ret, "图灵机器人", XiaoVs.QQ_BOT_NAME + "机器人");
                 ret = StringUtils.replace(ret, "默认机器人", XiaoVs.QQ_BOT_NAME + "机器人");
-
                 ret = StringUtils.replace(ret, "<br>", "\n");
-            } else if (2 == QQ_BOT_TYPE) {
-                ret = baiduQueryService.chat(content);
-            } else if (3 == QQ_BOT_TYPE) {
-                ret = itpkQueryService.chat(content);
             }
+        }else if (StringUtils.containsIgnoreCase(content,"机器人")) {
+             ret = "我只是个机器人呀！";
+        }else {
+            LOGGER.info("do nothing ...");
+        }
 
-            if (StringUtils.isBlank(ret)) {
-                ret = "嗯~";
-            }
+        if (StringUtils.isBlank(ret)) {
+            ret = "嗯~";
         }
 
         return ret;

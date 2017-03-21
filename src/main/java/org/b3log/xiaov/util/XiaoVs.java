@@ -37,6 +37,11 @@ public class XiaoVs {
     public static final String QQ_BOT_NAME = XiaoVs.getString("qq.bot.name");
 
     /**
+     * QQ nick name
+     */
+    public static final String QQ_BOT_NICK_NAME = XiaoVs.getString("qq.bot.nickName");
+
+    /**
      * Gets a configuration string property with the specified key.
      *
      * @param key the specified key
