@@ -562,34 +562,36 @@ public class QQService {
         return StringUtils.startsWith(result,robot1) || StringUtils.startsWith(result,robot2);
     }
 
+    private String beginTuringQuery(String content, final String userName) {
+        String ret = "";
+        ret = turingQueryService.chat(userName, content);
+        ret = StringUtils.replace(ret, "图灵机器人", XiaoVs.QQ_BOT_NAME + "机器人");
+        ret = StringUtils.replace(ret, "默认机器人", XiaoVs.QQ_BOT_NAME + "机器人");
+        ret = StringUtils.replace(ret, "<br>", "\n");
+        if (StringUtils.isBlank(ret)) {
+            ret = "嗯~";
+        }
+        return ret;
+    }
+
     private String answer(final String content, final String userName) {
         String ret = "";
         if (matchRobotHandle(content)) {
             LOGGER.info("begin handle msg with robot...");
             if (1 == QQ_BOT_TYPE) {
-                ret = turingQueryService.chat(userName, content);
-                ret = StringUtils.replace(ret, "图灵机器人", XiaoVs.QQ_BOT_NAME + "机器人");
-                ret = StringUtils.replace(ret, "默认机器人", XiaoVs.QQ_BOT_NAME + "机器人");
-                ret = StringUtils.replace(ret, "<br>", "\n");
+                ret = beginTuringQuery(content, userName);
             }
         }else if (StringUtils.containsIgnoreCase(content,"机器人")) {
              ret = "我只是个机器人呀！";
         }else if (StringUtils.containsIgnoreCase(content, "绕口令")) {
-          ret = turingQueryService.chat(userName, "说个绕口令");
-          ret = StringUtils.replace(ret, "<br>", "\n");
+             ret = beginTuringQuery("说个绕口令", userName);
         }else if (StringUtils.containsIgnoreCase(content, "脑筋急转弯")) {
-          ret = turingQueryService.chat(userName, "说个脑筋急转弯");
-          ret = StringUtils.replace(ret, "<br>", "\n");
+            ret = beginTuringQuery("说个脑筋急转弯", userName);
         }else if (StringUtils.containsIgnoreCase(content, "图片")) {
-          ret = turingQueryService.chat(userName, content);
-          ret = StringUtils.replace(ret, "<br>", "\n");
+            ret = beginTuringQuery(content, userName);
         }
         else {
             LOGGER.info("do nothing ...");
-        }
-
-        if (StringUtils.isBlank(ret)) {
-            ret = "嗯~";
         }
 
         return ret;
